@@ -1,7 +1,7 @@
 package com.example.hirelink.Role;
 
 public enum Role {
-    Seeker,
+    APPLICANT,
     EMPLOYER,
     ADMIN
 
