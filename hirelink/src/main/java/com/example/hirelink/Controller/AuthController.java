@@ -26,15 +26,28 @@ public class AuthController {
             throw new RuntimeException("Email already exists");
         }
 
+        // Convert the String role to uppercase for consistency
+        String roleStr = request.getRole().toUpperCase();
+
+        // Block direct admin registration
+        if (roleStr.equals("ADMIN")) {
+            throw new RuntimeException("Admin registration not allowed");
+        }
+
+        // Create new user
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.valueOf(request.getRole().toUpperCase()));
+
+        // Convert string to enum properly
+        user.setRole(Role.valueOf(roleStr));
 
         userRepository.save(user);
         return Map.of("message", "User registered successfully!");
     }
+
+
 
 
     @PostMapping("/login")
