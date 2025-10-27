@@ -1,6 +1,8 @@
 package com.example.hirelink.Controller;
 
+import com.example.hirelink.RegisterRequest;
 import com.example.hirelink.Repositories.UserRepository;
+import com.example.hirelink.Role.Role;
 import com.example.hirelink.Security.JwtUtil;
 import com.example.hirelink.User.User;
 import lombok.RequiredArgsConstructor;
@@ -19,15 +21,21 @@ public class AuthController {
     private final JwtUtil jwtUtil; // ✅ inject JwtUtil
 
     @PostMapping("/register")
-    public Map<String, String> register(@RequestBody User user) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+    public Map<String, String> register(@RequestBody RegisterRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.valueOf(request.getRole().toUpperCase()));
+
         userRepository.save(user);
         return Map.of("message", "User registered successfully!");
     }
+
 
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody User user) {
