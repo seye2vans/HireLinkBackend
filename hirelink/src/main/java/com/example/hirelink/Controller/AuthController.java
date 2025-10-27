@@ -26,28 +26,29 @@ public class AuthController {
             throw new RuntimeException("Email already exists");
         }
 
-        // Convert the String role to uppercase for consistency
         String roleStr = request.getRole().toUpperCase();
 
-        // Block direct admin registration
+        // ✅ Block direct admin registration
         if (roleStr.equals("ADMIN")) {
             throw new RuntimeException("Admin registration not allowed");
         }
 
-        // Create new user
+        // ✅ Create new user
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // Convert string to enum properly
-        user.setRole(Role.valueOf(roleStr));
+        // ✅ Convert to enum safely
+        try {
+            user.setRole(Role.valueOf(roleStr));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid role. Use APPLICANT or EMPLOYER only.");
+        }
 
         userRepository.save(user);
         return Map.of("message", "User registered successfully!");
     }
-
-
 
 
     @PostMapping("/login")
@@ -59,9 +60,22 @@ public class AuthController {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // ✅ Call the instance method via injected bean
+        // ✅ Handle null or admin roles safely
+        if (dbUser.getRole() == null) {
+            throw new RuntimeException("User role not assigned. Contact admin.");
+        }
+
+        if (dbUser.getRole().equals(Role.ADMIN)) {
+            throw new RuntimeException("Admin login not allowed via public endpoint");
+        }
+
+        // ✅ Generate token
         String token = jwtUtil.generateToken(dbUser.getEmail());
 
-        return Map.of("token", token, "message", "Login successful");
+        return Map.of(
+                "token", token,
+                "role", dbUser.getRole().name(),
+                "message", "Login successful"
+        );
     }
 }
