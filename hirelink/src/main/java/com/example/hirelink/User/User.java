@@ -1,27 +1,33 @@
 package com.example.hirelink.User;
 
 import com.example.hirelink.Role.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
 @Entity
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
-public class  User{
+public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     private String name;
 
+    @Email
     @Column(unique = true)
     private String email;
 
+    @JsonIgnore
+    @NotBlank
     private String password;
 
     @Enumerated(EnumType.STRING)

@@ -18,8 +18,9 @@ public class AuthController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil; // ✅ inject JwtUtil
+    private final JwtUtil jwtUtil;
 
+    // ✅ REGISTER ENDPOINT
     @PostMapping("/register")
     public Map<String, String> register(@RequestBody RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -28,29 +29,30 @@ public class AuthController {
 
         String roleStr = request.getRole().toUpperCase();
 
-        // ✅ Block direct admin registration
         if (roleStr.equals("ADMIN")) {
             throw new RuntimeException("Admin registration not allowed");
         }
 
-        // ✅ Create new user
+        Role role;
+        try {
+            role = Role.valueOf(roleStr);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid role. Use SEEKER or EMPLOYER only.");
+        }
+
         User user = new User();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        // ✅ Convert to enum safely
-        try {
-            user.setRole(Role.valueOf(roleStr));
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid role. Use APPLICANT or EMPLOYER only.");
-        }
+        user.setRole(role);
 
         userRepository.save(user);
+
         return Map.of("message", "User registered successfully!");
     }
 
 
+    // ✅ LOGIN ENDPOINT
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody User user) {
         User dbUser = userRepository.findByEmail(user.getEmail())
@@ -60,7 +62,6 @@ public class AuthController {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // ✅ Handle null or admin roles safely
         if (dbUser.getRole() == null) {
             throw new RuntimeException("User role not assigned. Contact admin.");
         }
@@ -69,13 +70,14 @@ public class AuthController {
             throw new RuntimeException("Admin login not allowed via public endpoint");
         }
 
-        // ✅ Generate token
+        // ✅ Generate JWT
         String token = jwtUtil.generateToken(dbUser.getEmail());
 
+        // ✅ Return clean JSON for frontend
         return Map.of(
-                "token", token,
+                "email", dbUser.getEmail(),
                 "role", dbUser.getRole().name(),
-                "message", "Login successful"
+                "token", token
         );
     }
 }
