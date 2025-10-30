@@ -1,5 +1,6 @@
 package com.example.hirelink.Controller;
 
+import com.example.hirelink.LoginRequest;
 import com.example.hirelink.RegisterRequest;
 import com.example.hirelink.Repositories.UserRepository;
 import com.example.hirelink.Role.Role;
@@ -55,12 +56,12 @@ public class AuthController {
 
     // ✅ LOGIN ENDPOINT
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {
-            User dbUser = userRepository.findByEmail(user.getEmail())
+            User dbUser = userRepository.findByEmail(request.getEmail())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            if (!passwordEncoder.matches(user.getPassword(), dbUser.getPassword())) {
+            if (!passwordEncoder.matches(request.getPassword(), dbUser.getPassword())) {
                 return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
             }
 
@@ -75,5 +76,6 @@ public class AuthController {
             return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
         }
     }
+
 
 }
