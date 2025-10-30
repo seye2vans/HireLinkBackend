@@ -1,5 +1,6 @@
 package com.example.hirelink.Repositories;
 
+//import com.example.hirelink.Job.;
 import com.example.hirelink.Job.Job;
 import org.springframework.data.jpa.repository.JpaRepository;
 
