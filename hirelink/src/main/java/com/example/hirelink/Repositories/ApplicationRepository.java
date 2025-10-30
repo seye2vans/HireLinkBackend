@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
     List<Application> findByJob_IdAndUser_Email(Long jobId, String userEmail);
+    void deleteByJobId(Long jobId);
+
 }
