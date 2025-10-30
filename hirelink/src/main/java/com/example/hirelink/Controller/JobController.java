@@ -3,6 +3,7 @@ package com.example.hirelink.Controller;
 import com.example.hirelink.Job.Job;
 import com.example.hirelink.Repositories.JobRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,5 +23,12 @@ public class JobController {
     public Job createJob(@RequestBody Job job){
         return jobRepository.save(job);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<Job> getJobById(@PathVariable Long id) {
+        return jobRepository.findById(id)
+                .map(job -> ResponseEntity.ok(job))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
 }
 
