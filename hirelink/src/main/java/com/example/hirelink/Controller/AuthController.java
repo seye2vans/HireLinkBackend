@@ -6,6 +6,7 @@ import com.example.hirelink.Role.Role;
 import com.example.hirelink.Security.JwtUtil;
 import com.example.hirelink.User.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -54,30 +55,25 @@ public class AuthController {
 
     // ✅ LOGIN ENDPOINT
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody User user) {
-        User dbUser = userRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public ResponseEntity<?> login(@RequestBody User user) {
+        try {
+            User dbUser = userRepository.findByEmail(user.getEmail())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!passwordEncoder.matches(user.getPassword(), dbUser.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            if (!passwordEncoder.matches(user.getPassword(), dbUser.getPassword())) {
+                return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials"));
+            }
+
+            String token = jwtUtil.generateToken(dbUser.getEmail());
+
+            return ResponseEntity.ok(Map.of(
+                    "email", dbUser.getEmail(),
+                    "role", dbUser.getRole().name(),
+                    "token", token
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
         }
-
-        if (dbUser.getRole() == null) {
-            throw new RuntimeException("User role not assigned. Contact admin.");
-        }
-
-        if (dbUser.getRole().equals(Role.ADMIN)) {
-            throw new RuntimeException("Admin login not allowed via public endpoint");
-        }
-
-        // ✅ Generate JWT
-        String token = jwtUtil.generateToken(dbUser.getEmail());
-
-        // ✅ Return clean JSON for frontend
-        return Map.of(
-                "email", dbUser.getEmail(),
-                "role", dbUser.getRole().name(),
-                "token", token
-        );
     }
+
 }
