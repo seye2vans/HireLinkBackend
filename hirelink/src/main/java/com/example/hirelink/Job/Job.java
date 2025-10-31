@@ -21,9 +21,16 @@ public class Job {
     private String title;
     private String company;
     private String location;
+
     @Column(length = 2000)
     private String description;
+
     private String type;
+
+    // ✅ Add these two new fields:
+    private String jobSalary;   // e.g., "$80,000/year"
+    private String jobStatus;   // e.g., "Active" or "Closed"
+
     @ManyToOne
     @JoinColumn(name = "employer_id")
     private User employer;

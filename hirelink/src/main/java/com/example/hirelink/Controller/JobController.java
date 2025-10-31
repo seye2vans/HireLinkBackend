@@ -13,6 +13,7 @@ import java.util.List;
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
 public class JobController {
+
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
 
@@ -29,7 +30,26 @@ public class JobController {
     @GetMapping("/{id}")
     public ResponseEntity<Job> getJobById(@PathVariable Long id) {
         return jobRepository.findById(id)
-                .map(job -> ResponseEntity.ok(job))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ✅ Add this: update job
+    @PatchMapping("/{id}")
+    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job updatedJob) {
+        return jobRepository.findById(id)
+                .map(existingJob -> {
+                    // Update only fields that exist (you can adjust these)
+                    existingJob.setTitle(updatedJob.getTitle());
+                    existingJob.setCompany(updatedJob.getCompany());
+                    existingJob.setLocation(updatedJob.getLocation());
+                    existingJob.setType(updatedJob.getType());
+                    existingJob.setJobSalary(updatedJob.getJobSalary());
+                    existingJob.setJobStatus(updatedJob.getJobStatus());
+
+                    Job saved = jobRepository.save(existingJob);
+                    return ResponseEntity.ok(saved);
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
