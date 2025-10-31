@@ -35,23 +35,24 @@ public class JobController {
     }
 
     // ✅ Add this: update job
-    @PatchMapping("/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job updatedJob) {
         return jobRepository.findById(id)
                 .map(existingJob -> {
-                    // Update only fields that exist (you can adjust these)
                     existingJob.setTitle(updatedJob.getTitle());
                     existingJob.setCompany(updatedJob.getCompany());
                     existingJob.setLocation(updatedJob.getLocation());
+                    existingJob.setDescription(updatedJob.getDescription());
                     existingJob.setType(updatedJob.getType());
                     existingJob.setJobSalary(updatedJob.getJobSalary());
-                    existingJob.setJobStatus(updatedJob.getJobStatus());
+                    existingJob.setStatus(updatedJob.getStatus()); // 👈 Add this line
 
-                    Job saved = jobRepository.save(existingJob);
-                    return ResponseEntity.ok(saved);
+                    Job savedJob = jobRepository.save(existingJob);
+                    return ResponseEntity.ok(savedJob);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
 
     @DeleteMapping("/{jobId}/cascade")
     public ResponseEntity<?> deleteJobCascade(@PathVariable Long jobId) {
