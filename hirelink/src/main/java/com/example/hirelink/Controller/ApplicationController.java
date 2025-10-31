@@ -9,6 +9,7 @@ import com.example.hirelink.Security.JwtUtil;
 import com.example.hirelink.User.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -74,20 +75,26 @@ public class ApplicationController {
 
     // ✅ Get all applications for jobs posted by the employer
     @GetMapping("/employer")
-    public ResponseEntity<List<Application>> getEmployerApplications(
-            @RequestHeader("Authorization") String authHeader) {
-
-        String token = authHeader.replace("Bearer ", "");
-        String email = jwtUtil.extractUsername(token);
-
-        // ✅ Find employer by email
-        User employer = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Employer not found"));
-
-        // ✅ Fetch applications directly via employer email — no need to load all apps
-        List<Application> applications = applicationRepository.findByJob_Employer_Email(email);
-
+    public ResponseEntity<List<Application>> getEmployerApplications(@AuthenticationPrincipal User employer) {
+        // Fetch applications for jobs owned by this employer
+        List<Application> applications = applicationRepository.findByJob_Employer(employer);
         return ResponseEntity.ok(applications);
     }
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Application> updateApplicationStatus(
+            @PathVariable Long id,
+            @RequestParam String status,
+            @AuthenticationPrincipal User employer) {
+
+        return applicationRepository.findById(id)
+                .filter(app -> app.getJob().getEmployer().getId().equals(employer.getId()))
+                .map(app -> {
+                    app.setStatus(status);
+                    return ResponseEntity.ok(applicationRepository.save(app));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+
 
 }

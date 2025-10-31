@@ -15,6 +15,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     void deleteByJobId(Long jobId);
 
     // ✅ For getting all applications submitted by a specific user (job seeker)
-    List<Application> findByJob_Employer_Email(String email);
+    List<Application> findByJob_Employer(User employer);
 
 }
