@@ -34,7 +34,7 @@ public class JobController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // ✅ Add this: update job
+    // ✅ Update job
     @PutMapping("/{id}")
     public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job updatedJob) {
         return jobRepository.findById(id)
@@ -44,15 +44,14 @@ public class JobController {
                     existingJob.setLocation(updatedJob.getLocation());
                     existingJob.setDescription(updatedJob.getDescription());
                     existingJob.setType(updatedJob.getType());
-                    existingJob.setJobSalary(updatedJob.getJobSalary());
-                    existingJob.setStatus(updatedJob.getStatus()); // 👈 Add this line
+                    existingJob.setSalary(updatedJob.getSalary()); // 👈 updated
+                    existingJob.setStatus(updatedJob.getStatus()); // 👈 updated
 
                     Job savedJob = jobRepository.save(existingJob);
                     return ResponseEntity.ok(savedJob);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
-
 
     @DeleteMapping("/{jobId}/cascade")
     public ResponseEntity<?> deleteJobCascade(@PathVariable Long jobId) {
