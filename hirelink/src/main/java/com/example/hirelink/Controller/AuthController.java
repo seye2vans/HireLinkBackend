@@ -105,22 +105,20 @@ public class AuthController {
             @RequestParam String email) {
 
         try {
-            // 1️⃣ Check Authorization header
+            // 1️⃣ Validate token header
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
             }
 
-            // 2️⃣ Extract and validate token
+            // 2️⃣ Extract and verify JWT token
             String token = authHeader.substring(7);
             String tokenEmail = jwtUtil.extractUsername(token);
 
-            // 3️⃣ Ensure the token corresponds to a valid user
+            // 3️⃣ Check if token user exists
             User authUser = userRepository.findByEmail(tokenEmail)
                     .orElseThrow(() -> new RuntimeException("Invalid token user"));
 
-            // 4️⃣ Allow the request if:
-            //     a) the logged-in user is requesting their own data, OR
-            //     b) the logged-in user is an EMPLOYER or ADMIN
+            // 4️⃣ Allow only the user themselves or admins/employers to access
             if (!authUser.getEmail().equals(email) && authUser.getRole().name().equalsIgnoreCase("SEEKER")) {
                 return ResponseEntity.status(403).body(Map.of("message", "Forbidden"));
             }
@@ -129,11 +127,15 @@ public class AuthController {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // 6️⃣ Return user info safely
+            // 6️⃣ Return full user info expected by frontend
             return ResponseEntity.ok(Map.of(
                     "id", user.getId(),
                     "name", user.getName(),
                     "email", user.getEmail(),
+                    "phone", user.getPhone(),
+                    "bio", user.getBio(),
+                    "resume", user.getResume(),
+                    "resumeFileName", user.getResumeFileName(),
                     "role", user.getRole().name()
             ));
 
@@ -141,6 +143,7 @@ public class AuthController {
             return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
         }
     }
+
     @PutMapping("/updateProfile")
     public ResponseEntity<?> updateProfile(@RequestHeader("Authorization") String authHeader,
                                            @RequestBody Map<String, Object> updates) {
