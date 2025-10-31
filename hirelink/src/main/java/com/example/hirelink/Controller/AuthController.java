@@ -132,12 +132,13 @@ public class AuthController {
                     "id", user.getId(),
                     "name", user.getName(),
                     "email", user.getEmail(),
-                    "phone", user.getPhone(),
-                    "bio", user.getBio(),
-                    "resume", user.getResume(),
-                    "resumeFileName", user.getResumeFileName(),
+                    "phone", user.getPhone() != null ? user.getPhone() : "",
+                    "bio", user.getBio() != null ? user.getBio() : "",
+                    "resume", user.getResume() != null ? user.getResume() : "",
+                    "resumeFileName", user.getResumeFileName() != null ? user.getResumeFileName() : "",
                     "role", user.getRole().name()
             ));
+
 
         } catch (Exception e) {
             return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
