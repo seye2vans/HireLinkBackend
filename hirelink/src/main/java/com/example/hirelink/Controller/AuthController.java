@@ -98,6 +98,50 @@ public class AuthController {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid token"));
         }
     }
+    // ✅ SECURE: Get user by email (requires Bearer token)
+    @GetMapping("/user")
+    public ResponseEntity<?> getUserByEmail(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam String email) {
+
+        try {
+            // 1️⃣ Check Authorization header
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+            }
+
+            // 2️⃣ Extract and validate token
+            String token = authHeader.substring(7);
+            String tokenEmail = jwtUtil.extractUsername(token);
+
+            // 3️⃣ Ensure the token corresponds to a valid user
+            User authUser = userRepository.findByEmail(tokenEmail)
+                    .orElseThrow(() -> new RuntimeException("Invalid token user"));
+
+            // 4️⃣ Allow the request if:
+            //     a) the logged-in user is requesting their own data, OR
+            //     b) the logged-in user is an EMPLOYER or ADMIN
+            if (!authUser.getEmail().equals(email) && authUser.getRole().name().equalsIgnoreCase("SEEKER")) {
+                return ResponseEntity.status(403).body(Map.of("message", "Forbidden"));
+            }
+
+            // 5️⃣ Fetch requested user
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // 6️⃣ Return user info safely
+            return ResponseEntity.ok(Map.of(
+                    "id", user.getId(),
+                    "name", user.getName(),
+                    "email", user.getEmail(),
+                    "role", user.getRole().name()
+            ));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
+        }
+    }
+
 
 
 
