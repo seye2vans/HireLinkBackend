@@ -51,7 +51,7 @@ public class JobController {
                     existingJob.setDescription(updatedJob.getDescription());
                     existingJob.setType(updatedJob.getType());
                     existingJob.setJobSalary(updatedJob.getJobSalary());
-                    existingJob.setStatus(updatedJob.getStatus());
+                    existingJob.setJobStatus(updatedJob.getJobStatus());
                     Job savedJob = jobRepository.save(existingJob);
                     return ResponseEntity.ok(savedJob);
                 })
