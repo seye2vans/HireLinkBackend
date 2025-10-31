@@ -32,4 +32,16 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    // ✅ Optional profile fields
+    private String phone;
+
+    @Column(length = 2000)
+    private String bio;
+
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String resume; // Store Base64 resume or file URL
+
+    private String resumeFileName;
 }

@@ -141,6 +141,34 @@ public class AuthController {
             return ResponseEntity.status(400).body(Map.of("message", e.getMessage()));
         }
     }
+    @PutMapping("/updateProfile")
+    public ResponseEntity<?> updateProfile(@RequestHeader("Authorization") String authHeader,
+                                           @RequestBody Map<String, Object> updates) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+            }
+
+            String token = authHeader.substring(7);
+            String email = jwtUtil.extractUsername(token);
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // ✅ Update only allowed fields
+            if (updates.containsKey("name")) user.setName((String) updates.get("name"));
+            if (updates.containsKey("phone")) user.setPhone((String) updates.get("phone"));
+            if (updates.containsKey("bio")) user.setBio((String) updates.get("bio"));
+            if (updates.containsKey("resume")) user.setResume((String) updates.get("resume"));
+            if (updates.containsKey("resumeFileName")) user.setResumeFileName((String) updates.get("resumeFileName"));
+
+            userRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
+        }
+    }
 
 
 
