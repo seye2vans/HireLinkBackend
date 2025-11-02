@@ -40,20 +40,16 @@ public class JobController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job updatedJob, @AuthenticationPrincipal User currentUser) {
+    @PatchMapping("/{id}")
+    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job updatedJob) {
         return jobRepository.findById(id)
-                .filter(job -> job.getEmployer().getId().equals(currentUser.getId())) // only allow owner
-                .map(existingJob -> {
-                    existingJob.setTitle(updatedJob.getTitle());
-                    existingJob.setCompany(updatedJob.getCompany());
-                    existingJob.setLocation(updatedJob.getLocation());
-                    existingJob.setDescription(updatedJob.getDescription());
-                    existingJob.setType(updatedJob.getType());
-                    existingJob.setJobSalary(updatedJob.getJobSalary());
-                    existingJob.setJobStatus(updatedJob.getJobStatus());
-                    Job savedJob = jobRepository.save(existingJob);
-                    return ResponseEntity.ok(savedJob);
+                .map(job -> {
+                    if (updatedJob.getTitle() != null) job.setTitle(updatedJob.getTitle());
+                    if (updatedJob.getLocation() != null) job.setLocation(updatedJob.getLocation());
+                    if (updatedJob.getType() != null) job.setType(updatedJob.getType());
+                    if (updatedJob.getJobSalary() != null) job.setJobSalary(updatedJob.getJobSalary());
+                    if (updatedJob.getJobStatus() != null) job.setJobStatus(updatedJob.getJobStatus());
+                    return ResponseEntity.ok(jobRepository.save(job));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
