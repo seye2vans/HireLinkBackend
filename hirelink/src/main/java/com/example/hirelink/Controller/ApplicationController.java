@@ -9,6 +9,7 @@ import com.example.hirelink.Security.JwtUtil;
 import com.example.hirelink.User.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -112,34 +113,27 @@ public class ApplicationController {
     }
 
     // ✅ Employer updates application status (Accept / Reject)
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<Object> updateApplicationStatus(
-            @PathVariable Long id,
-            @RequestParam String status,
-            @RequestHeader("Authorization") String authHeader) {
-
+    @PostMapping
+    public ResponseEntity<?> applyToJob(
+            @RequestParam Long jobId,
+            @RequestParam(required = false) String coverLetter,
+            @AuthenticationPrincipal User user
+    ) {
         try {
-            String token = authHeader.replace("Bearer ", "");
-            String email = jwtUtil.extractUsername(token);
+            Job job = jobRepository.findById(jobId)
+                    .orElseThrow(() -> new RuntimeException("Job not found"));
 
-            User employer = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("Employer not found"));
+            Application application = new Application();
+            application.setJob(job);
+            application.setUser(user);
+            application.setCoverLetter(coverLetter);
+            application.setStatus("Under Review");
+            application.setAppliedDate(LocalDateTime.now());
+            applicationRepository.save(application);
 
-            return applicationRepository.findById(id)
-                    .filter(app -> app.getJob().getEmployer().getId().equals(employer.getId()))
-                    .map(app -> {
-                        app.setStatus(status);
-                        applicationRepository.save(app);
-                        return ResponseEntity.ok((Object) app);
-                    })
-                    .orElseGet(() -> ResponseEntity
-                            .badRequest()
-                            .body((Object) "❌ Application not found or unauthorized"));
-
+            return ResponseEntity.ok(application);
         } catch (Exception e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("❌ Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("❌ Error applying: " + e.getMessage());
         }
     }
 
