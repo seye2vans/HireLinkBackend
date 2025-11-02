@@ -77,13 +77,17 @@ public class ApplicationController {
     public ResponseEntity<List<Application>> getEmployerApplications(
             @RequestHeader("Authorization") String authHeader) {
 
+        // Extract email from token
         String token = authHeader.replace("Bearer ", "");
         String email = jwtUtil.extractUsername(token);
 
+        // Fetch the employer user
         User employer = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Employer not found"));
 
+        // Fetch all applications for jobs posted by this employer
         List<Application> applications = applicationRepository.findByJob_Employer(employer);
+
         return ResponseEntity.ok(applications);
     }
 
