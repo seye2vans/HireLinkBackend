@@ -19,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/applications")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*") // ✅ Allow frontend access
 public class ApplicationController {
 
     private final ApplicationRepository applicationRepository;
@@ -37,11 +38,22 @@ public class ApplicationController {
 
     // ✅ Job seeker submits application
     @PostMapping
-    public ResponseEntity<Application> submitApplication(
+    public ResponseEntity<?> submitApplication(
             @RequestParam Long jobId,
             @RequestParam String coverLetter,
             @RequestParam(required = false) MultipartFile resume,
             @RequestHeader("Authorization") String authHeader) throws IOException {
+
+        // Debug log to see incoming data
+        System.out.println("📩 Application received:");
+        System.out.println("jobId = " + jobId);
+        System.out.println("coverLetter = " + coverLetter);
+        System.out.println("resume = " + (resume != null ? resume.getOriginalFilename() : "none"));
+        System.out.println("authHeader = " + authHeader);
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("❌ Missing or invalid Authorization header");
+        }
 
         String token = authHeader.replace("Bearer ", "");
         String email = jwtUtil.extractUsername(token);
@@ -52,12 +64,18 @@ public class ApplicationController {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
+        // ✅ Prevent duplicate applications
+        List<Application> existingApps = applicationRepository.findByJob_IdAndUser_Email(jobId, email);
+        if (!existingApps.isEmpty()) {
+            return ResponseEntity.badRequest().body("❌ You already applied for this job");
+        }
+
         Application app = new Application();
         app.setUser(user);
         app.setJob(job);
         app.setCoverLetter(coverLetter);
 
-        // Optional resume upload
+        // ✅ Optional resume upload
         if (resume != null && !resume.isEmpty()) {
             String uploadDir = "uploads/";
             File dir = new File(uploadDir);
@@ -68,8 +86,9 @@ public class ApplicationController {
             app.setResumePath(filePath);
         }
 
-        applicationRepository.save(app);
-        return ResponseEntity.ok(app);
+        Application savedApp = applicationRepository.save(app);
+        System.out.println("✅ Application saved successfully for jobId: " + jobId);
+        return ResponseEntity.ok(savedApp);
     }
 
     // ✅ Employer gets all job seekers’ applications for their own jobs
@@ -77,15 +96,16 @@ public class ApplicationController {
     public ResponseEntity<List<Application>> getEmployerApplications(
             @RequestHeader("Authorization") String authHeader) {
 
-        // Extract email from token
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().build();
+        }
+
         String token = authHeader.replace("Bearer ", "");
         String email = jwtUtil.extractUsername(token);
 
-        // Fetch the employer user
         User employer = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Employer not found"));
 
-        // Fetch all applications for jobs posted by this employer
         List<Application> applications = applicationRepository.findByJob_Employer(employer);
 
         return ResponseEntity.ok(applications);
@@ -93,23 +113,34 @@ public class ApplicationController {
 
     // ✅ Employer updates application status (Accept / Reject)
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Application> updateApplicationStatus(
+    public ResponseEntity<Object> updateApplicationStatus(
             @PathVariable Long id,
             @RequestParam String status,
             @RequestHeader("Authorization") String authHeader) {
 
-        String token = authHeader.replace("Bearer ", "");
-        String email = jwtUtil.extractUsername(token);
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String email = jwtUtil.extractUsername(token);
 
-        User employer = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Employer not found"));
+            User employer = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Employer not found"));
 
-        return applicationRepository.findById(id)
-                .filter(app -> app.getJob().getEmployer().getId().equals(employer.getId()))
-                .map(app -> {
-                    app.setStatus(status);
-                    return ResponseEntity.ok(applicationRepository.save(app));
-                })
-                .orElse(ResponseEntity.notFound().build());
+            return applicationRepository.findById(id)
+                    .filter(app -> app.getJob().getEmployer().getId().equals(employer.getId()))
+                    .map(app -> {
+                        app.setStatus(status);
+                        applicationRepository.save(app);
+                        return ResponseEntity.ok((Object) app);
+                    })
+                    .orElseGet(() -> ResponseEntity
+                            .badRequest()
+                            .body((Object) "❌ Application not found or unauthorized"));
+
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("❌ Error: " + e.getMessage());
+        }
     }
+
 }
