@@ -10,7 +10,7 @@ RUN mvn clean package -DskipTests
 # =========================
 # 2️⃣ Runtime stage
 # =========================
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 COPY --from=build /app/hirelink/target/hirelink-*.jar app.jar
 EXPOSE 8081
