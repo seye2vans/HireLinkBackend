@@ -57,7 +57,7 @@ public class JobController {
         return jobRepository.findById(jobId)
                 .filter(job -> job.getEmployer().getId().equals(currentUser.getId())) // only allow owner
                 .map(job -> {
-                    applicationRepository.deleteByJobId(jobId); // Delete related applications
+                    applicationRepository.deleteByJob_Id(jobId); // Delete related applications
                     jobRepository.delete(job); // Delete the job
                     return ResponseEntity.ok().build();
                 })
