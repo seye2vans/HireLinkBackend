@@ -33,7 +33,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    // ✅ Optional profile fields
     private String phone;
 
     @Column(length = 2000)

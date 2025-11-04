@@ -1,16 +1,16 @@
 package com.example.hirelink.Repositories;
 
-import com.example.hirelink.Job.Application;
+import com.example.hirelink.Application.Application;
 import com.example.hirelink.User.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
 
-    List<Application> findByJob_IdAndUser_Email(Long jobId, String userEmail);
+    // ✅ Use applicant instead of user
+    List<Application> findByJob_IdAndApplicant_Email(Long jobId, String applicantEmail);
 
-    void deleteByJobId(Long jobId);
+    void deleteByJob_Id(Long jobId);
 
-    // ✅ All applications for jobs owned by an employer
     List<Application> findByJob_Employer(User employer);
 }

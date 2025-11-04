@@ -10,12 +10,10 @@ import java.util.List;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
 
-    // ✅ Simple version using field relationship
     List<Job> findByEmployer(User employer);
     List<Job> findByEmployerId(Long employerId);
 
 
-    // ✅ OR: More efficient query-based version using employer email
     @Query("SELECT j FROM Job j WHERE j.employer.email = :email")
     List<Job> findJobsByEmployerEmail(@Param("email") String email);
 }

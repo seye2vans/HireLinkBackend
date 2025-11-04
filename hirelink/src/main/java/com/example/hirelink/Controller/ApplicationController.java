@@ -1,6 +1,6 @@
 package com.example.hirelink.Controller;
 
-import com.example.hirelink.Job.Application;
+import com.example.hirelink.Application.Application;
 import com.example.hirelink.Job.Job;
 import com.example.hirelink.Repositories.ApplicationRepository;
 import com.example.hirelink.Repositories.JobRepository;
@@ -9,20 +9,18 @@ import com.example.hirelink.Security.JwtUtil;
 import com.example.hirelink.User.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/applications")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // ✅ Allow frontend access
+@CrossOrigin(origins = "*")
 public class ApplicationController {
 
     private final ApplicationRepository applicationRepository;
@@ -30,29 +28,14 @@ public class ApplicationController {
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
 
-    // ✅ Job seeker gets their applications for a specific job
-    @GetMapping
-    public ResponseEntity<List<Application>> getUserApplications(
-            @RequestParam Long jobId,
-            @RequestParam String userEmail) {
-        List<Application> apps = applicationRepository.findByJob_IdAndUser_Email(jobId, userEmail);
-        return ResponseEntity.ok(apps);
-    }
-
-    // ✅ Job seeker submits application
+    // ✅ Apply for a job
     @PostMapping
     public ResponseEntity<?> submitApplication(
             @RequestParam Long jobId,
-            @RequestParam String coverLetter,
+            @RequestParam(required = false) String coverLetter,
             @RequestParam(required = false) MultipartFile resume,
-            @RequestHeader("Authorization") String authHeader) throws IOException {
-
-        // Debug log to see incoming data
-        System.out.println("📩 Application received:");
-        System.out.println("jobId = " + jobId);
-        System.out.println("coverLetter = " + coverLetter);
-        System.out.println("resume = " + (resume != null ? resume.getOriginalFilename() : "none"));
-        System.out.println("authHeader = " + authHeader);
+            @RequestHeader("Authorization") String authHeader
+    ) throws IOException {
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().body("❌ Missing or invalid Authorization header");
@@ -61,24 +44,26 @@ public class ApplicationController {
         String token = authHeader.replace("Bearer ", "");
         String email = jwtUtil.extractUsername(token);
 
-        User user = userRepository.findByEmail(email)
+        User applicant = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
         // ✅ Prevent duplicate applications
-        List<Application> existingApps = applicationRepository.findByJob_IdAndUser_Email(jobId, email);
-        if (!existingApps.isEmpty()) {
+        List<Application> existing = applicationRepository.findByJob_IdAndApplicant_Email(jobId, email);
+        if (!existing.isEmpty()) {
             return ResponseEntity.badRequest().body("❌ You already applied for this job");
         }
 
         Application app = new Application();
-        app.setUser(user);
+        app.setApplicant(applicant);
         app.setJob(job);
+        app.setStatus("Under Review");
+        app.setResumeUrl(null);
         app.setCoverLetter(coverLetter);
+        app.setAppliedDate(LocalDateTime.now());
 
-        // ✅ Optional resume upload
         if (resume != null && !resume.isEmpty()) {
             String uploadDir = "uploads/";
             File dir = new File(uploadDir);
@@ -86,19 +71,18 @@ public class ApplicationController {
 
             String filePath = uploadDir + resume.getOriginalFilename();
             resume.transferTo(new File(filePath));
-            app.setResumePath(filePath);
+            app.setResumeUrl(filePath);
         }
 
-        Application savedApp = applicationRepository.save(app);
-        System.out.println("✅ Application saved successfully for jobId: " + jobId);
-        return ResponseEntity.ok(savedApp);
+        Application saved = applicationRepository.save(app);
+        return ResponseEntity.ok(saved);
     }
 
-    // ✅ Employer gets all job seekers’ applications for their own jobs
+    // ✅ Employer fetch applications
     @GetMapping("/employer")
     public ResponseEntity<List<Application>> getEmployerApplications(
-            @RequestHeader("Authorization") String authHeader) {
-
+            @RequestHeader("Authorization") String authHeader
+    ) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().build();
         }
@@ -110,33 +94,6 @@ public class ApplicationController {
                 .orElseThrow(() -> new RuntimeException("Employer not found"));
 
         List<Application> applications = applicationRepository.findByJob_Employer(employer);
-
         return ResponseEntity.ok(applications);
     }
-
-    // ✅ Employer updates application status (Accept / Reject)
-    @PostMapping
-    public ResponseEntity<?> applyToJob(
-            @RequestParam Long jobId,
-            @RequestParam(required = false) String coverLetter,
-            @AuthenticationPrincipal User user
-    ) {
-        try {
-            Job job = jobRepository.findById(jobId)
-                    .orElseThrow(() -> new RuntimeException("Job not found"));
-
-            Application application = new Application();
-            application.setJob(job);
-            application.setUser(user);
-            application.setCoverLetter(coverLetter);
-            application.setStatus("Under Review");
-            application.setAppliedDate(LocalDateTime.now());
-            applicationRepository.save(application);
-
-            return ResponseEntity.ok(application);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("❌ Error applying: " + e.getMessage());
-        }
-    }
-
 }

@@ -7,7 +7,6 @@ public class RegisterRequest {
     private String password;
     private String role;
 
-    // Getters and setters
     public String getName() {
         return name;
     }

@@ -1,8 +1,10 @@
 package com.example.hirelink.Application;
+
 import com.example.hirelink.Job.Job;
 import com.example.hirelink.User.User;
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -11,6 +13,7 @@ import lombok.*;
 @Builder
 @Table(name = "applications")
 public class Application {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,5 +27,7 @@ public class Application {
     private User applicant;
 
     private String resumeUrl;
+    private String coverLetter;
     private String status;
+    private LocalDateTime appliedDate;
 }

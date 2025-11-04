@@ -22,7 +22,6 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
-    // ✅ REGISTER ENDPOINT
     @PostMapping("/register")
     public Map<String, String> register(@RequestBody RegisterRequest request) {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -54,7 +53,6 @@ public class AuthController {
     }
 
 
-    // ✅ LOGIN ENDPOINT
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         try {

@@ -19,13 +19,11 @@ public class JobController {
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
 
-    // ✅ Get jobs only for the logged-in employer
     @GetMapping
     public List<Job> getJobs(@AuthenticationPrincipal User currentUser) {
         return jobRepository.findByEmployer(currentUser);
     }
 
-    // ✅ Create a new job and link it to the employer
     @PostMapping
     public Job createJob(@RequestBody Job job, @AuthenticationPrincipal User currentUser) {
         job.setEmployer(currentUser);
