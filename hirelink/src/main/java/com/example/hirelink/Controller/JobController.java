@@ -19,35 +19,28 @@ public class JobController {
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
 
-    // Get all jobs for the authenticated employer
     @GetMapping
     public List<Job> getJobs(@AuthenticationPrincipal User currentUser) {
         return jobRepository.findByEmployer(currentUser);
     }
 
-    // Create a new job
     @PostMapping
     public Job createJob(@RequestBody Job job, @AuthenticationPrincipal User currentUser) {
         job.setEmployer(currentUser);
-        return jobRepository.save(job); // postedDate is auto-set
+        return jobRepository.save(job);
     }
 
-    // Get a specific job by ID (owner only)
     @GetMapping("/{id}")
     public ResponseEntity<Job> getJobById(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
         return jobRepository.findById(id)
-                .filter(job -> job.getEmployer().getId().equals(currentUser.getId()))
+                .filter(job -> job.getEmployer().getId().equals(currentUser.getId())) // only allow owner
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Update a job (owner only)
     @PatchMapping("/{id}")
-    public ResponseEntity<Job> updateJob(@PathVariable Long id,
-            @RequestBody Job updatedJob,
-            @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<Job> updateJob(@PathVariable Long id, @RequestBody Job updatedJob) {
         return jobRepository.findById(id)
-                .filter(job -> job.getEmployer().getId().equals(currentUser.getId()))
                 .map(job -> {
                     if (updatedJob.getTitle() != null)
                         job.setTitle(updatedJob.getTitle());
@@ -59,20 +52,18 @@ public class JobController {
                         job.setJobSalary(updatedJob.getJobSalary());
                     if (updatedJob.getJobStatus() != null)
                         job.setJobStatus(updatedJob.getJobStatus());
-                    return ResponseEntity.ok(jobRepository.save(job)); // updatedAt auto-set
+                    return ResponseEntity.ok(jobRepository.save(job));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Delete a job and its related applications (owner only)
     @DeleteMapping("/{jobId}/cascade")
-    public ResponseEntity<?> deleteJobCascade(@PathVariable Long jobId,
-            @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> deleteJobCascade(@PathVariable Long jobId, @AuthenticationPrincipal User currentUser) {
         return jobRepository.findById(jobId)
-                .filter(job -> job.getEmployer().getId().equals(currentUser.getId()))
+                .filter(job -> job.getEmployer().getId().equals(currentUser.getId())) // only allow owner
                 .map(job -> {
                     applicationRepository.deleteByJob_Id(jobId); // Delete related applications
-                    jobRepository.delete(job); // Delete the job itself
+                    jobRepository.delete(job); // Delete the job
                     return ResponseEntity.ok().build();
                 })
                 .orElse(ResponseEntity.notFound().build());
