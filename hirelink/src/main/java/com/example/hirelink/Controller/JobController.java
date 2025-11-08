@@ -63,10 +63,10 @@ public class JobController {
     @DeleteMapping("/{jobId}/cascade")
     public ResponseEntity<?> deleteJobCascade(@PathVariable Long jobId, @AuthenticationPrincipal User currentUser) {
         return jobRepository.findById(jobId)
-                .filter(job -> job.getEmployer().getId().equals(currentUser.getId())) // only allow owner
+                .filter(job -> job.getEmployer().getId().equals(currentUser.getId()))
                 .map(job -> {
-                    applicationRepository.deleteByJob_Id(jobId); // Delete related applications
-                    jobRepository.delete(job); // Delete the job
+                    applicationRepository.deleteByJob_Id(jobId); // delete related applications first
+                    jobRepository.delete(job); // then delete the job
                     return ResponseEntity.ok().build();
                 })
                 .orElse(ResponseEntity.notFound().build());
