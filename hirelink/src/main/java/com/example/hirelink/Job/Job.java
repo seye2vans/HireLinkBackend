@@ -40,7 +40,5 @@ public class Job {
 
     @CreationTimestamp
     private LocalDateTime postedDate;
-
     private int applicants;
-
 }

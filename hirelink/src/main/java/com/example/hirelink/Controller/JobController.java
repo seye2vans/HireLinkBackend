@@ -4,8 +4,6 @@ import com.example.hirelink.Job.Job;
 import com.example.hirelink.Repositories.JobRepository;
 import com.example.hirelink.Repositories.ApplicationRepository;
 import com.example.hirelink.User.User;
-
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -59,7 +57,6 @@ public class JobController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Transactional
     @DeleteMapping("/{jobId}/cascade")
     public ResponseEntity<?> deleteJobCascade(@PathVariable Long jobId, @AuthenticationPrincipal User currentUser) {
         return jobRepository.findById(jobId)
