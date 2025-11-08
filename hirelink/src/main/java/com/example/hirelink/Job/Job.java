@@ -1,5 +1,9 @@
 package com.example.hirelink.Job;
 
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.CreationTimestamp;
+
 import com.example.hirelink.User.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -33,4 +37,7 @@ public class Job {
     @ManyToOne
     @JoinColumn(name = "employer_id")
     private User employer;
+
+    @CreationTimestamp
+    private LocalDateTime postedDate;
 }
