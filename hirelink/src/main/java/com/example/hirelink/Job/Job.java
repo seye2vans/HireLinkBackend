@@ -26,11 +26,10 @@ public class Job {
     private String company;
     private String location;
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     private String type;
-
     private String jobSalary;
     private String jobStatus;
 
@@ -40,5 +39,6 @@ public class Job {
 
     @CreationTimestamp
     private LocalDateTime postedDate;
+
     private int applicants;
 }
